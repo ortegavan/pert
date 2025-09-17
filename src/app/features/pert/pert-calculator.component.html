@@ -1,0 +1,475 @@
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Calculadora PERT & P90</h1>
+            <p class="text-lg text-gray-600">
+                Estime esforço com PERT (O, M, P) e obtenha percentis. Use com assunções claras.
+            </p>
+        </div>
+
+        <!-- Toast -->
+        @if (showToast()) {
+            <div
+                class="fixed top-4 right-4 bg-green-100 border border-green-300 text-green-800 px-4 py-2 rounded-lg shadow-lg z-50"
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+            >
+                {{ toastMessage() }}
+            </div>
+        }
+
+        <!-- Main Content -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Form Card -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6">Entradas</h2>
+
+                <form [formGroup]="pertForm" (ngSubmit)="onSubmit()" class="space-y-6">
+                    <!-- Valores PERT -->
+                    <div class="space-y-4">
+                        <div>
+                            <label for="O" class="block text-sm font-medium text-gray-700 mb-1">
+                                Otimista (O)
+                            </label>
+                            <input
+                                id="O"
+                                type="number"
+                                step="0.01"
+                                formControlName="O"
+                                placeholder="6"
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400"
+                                [class.border-red-300]="
+                                    pertForm.get('O')?.invalid && pertForm.get('O')?.touched
+                                "
+                                aria-invalid="pertForm.get('O')?.invalid"
+                                aria-describedby="O-error"
+                            />
+                            @if (pertForm.get('O')?.invalid && pertForm.get('O')?.touched) {
+                                <p id="O-error" class="text-red-600 text-sm mt-1">
+                                    {{ getFieldError('O') }}
+                                </p>
+                            }
+                        </div>
+
+                        <div>
+                            <label for="M" class="block text-sm font-medium text-gray-700 mb-1">
+                                Mais provável (M)
+                            </label>
+                            <input
+                                id="M"
+                                type="number"
+                                step="0.01"
+                                formControlName="M"
+                                placeholder="8"
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400"
+                                [class.border-red-300]="
+                                    pertForm.get('M')?.invalid && pertForm.get('M')?.touched
+                                "
+                                aria-invalid="pertForm.get('M')?.invalid"
+                                aria-describedby="M-error"
+                            />
+                            @if (pertForm.get('M')?.invalid && pertForm.get('M')?.touched) {
+                                <p id="M-error" class="text-red-600 text-sm mt-1">
+                                    {{ getFieldError('M') }}
+                                </p>
+                            }
+                        </div>
+
+                        <div>
+                            <label for="P" class="block text-sm font-medium text-gray-700 mb-1">
+                                Pessimista (P)
+                            </label>
+                            <input
+                                id="P"
+                                type="number"
+                                step="0.01"
+                                formControlName="P"
+                                placeholder="15"
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400"
+                                [class.border-red-300]="
+                                    pertForm.get('P')?.invalid && pertForm.get('P')?.touched
+                                "
+                                aria-invalid="pertForm.get('P')?.invalid"
+                                aria-describedby="P-error"
+                            />
+                            @if (pertForm.get('P')?.invalid && pertForm.get('P')?.touched) {
+                                <p id="P-error" class="text-red-600 text-sm mt-1">
+                                    {{ getFieldError('P') }}
+                                </p>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Unidade -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-3">
+                            Unidade
+                        </label>
+                        <div class="flex space-x-4">
+                            <label class="flex items-center">
+                                <input
+                                    type="radio"
+                                    formControlName="unidade"
+                                    value="horas"
+                                    class="mr-2 focus:ring-pink-400 text-pink-400 accent-pink-400"
+                                />
+                                <span class="text-gray-700">Horas</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input
+                                    type="radio"
+                                    formControlName="unidade"
+                                    value="dias"
+                                    class="mr-2 focus:ring-pink-400 text-pink-400 accent-pink-400"
+                                />
+                                <span class="text-gray-700">Dias</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Percentis -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-3">
+                            Estimativa de Confiança
+                        </label>
+                        <div class="grid grid-cols-2 gap-2">
+                            @for (percentil of getPercentis(); track percentil) {
+                                <label class="flex items-center">
+                                    <input
+                                        type="radio"
+                                        formControlName="percentilSelecionado"
+                                        [value]="percentil"
+                                        class="mr-2 focus:ring-pink-400 text-pink-400 accent-pink-400"
+                                    />
+                                    <span class="text-gray-700">P{{ percentil }}</span>
+                                </label>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Avançado -->
+                    <div>
+                        <button
+                            type="button"
+                            (click)="showAdvanced.set(!showAdvanced())"
+                            class="text-sm text-pink-600 hover:text-pink-700 font-medium"
+                        >
+                            {{ showAdvanced() ? 'Ocultar' : 'Avançado' }} ▼
+                        </button>
+
+                        @if (showAdvanced()) {
+                            <div class="mt-3">
+                                <label
+                                    for="lambda"
+                                    class="block text-sm font-medium text-gray-700 mb-1"
+                                >
+                                    λ (beta-PERT)
+                                </label>
+                                <input
+                                    id="lambda"
+                                    type="number"
+                                    step="0.1"
+                                    formControlName="lambda"
+                                    class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400"
+                                />
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Valor padrão: 4 (PERT clássico)
+                                </p>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Erro geral -->
+                    @if (pertForm.errors?.['pertRule'] && pertForm.touched) {
+                        <div class="bg-red-50 border border-red-200 rounded-lg p-3">
+                            <p class="text-red-600 text-sm">
+                                {{ getErrorMessage() }}
+                            </p>
+                        </div>
+                    }
+
+                    <!-- Botões -->
+                    <div class="flex space-x-3">
+                        <button
+                            type="submit"
+                            [disabled]="!isFormValid() || isLoading()"
+                            class="flex-1 bg-pink-400 hover:bg-pink-500 disabled:bg-gray-400 text-white rounded-lg px-4 py-2 font-medium transition-colors"
+                        >
+                            @if (isLoading()) {
+                                <span class="flex items-center justify-center">
+                                    <svg
+                                        class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <circle
+                                            class="opacity-25"
+                                            cx="12"
+                                            cy="12"
+                                            r="10"
+                                            stroke="currentColor"
+                                            stroke-width="4"
+                                        ></circle>
+                                        <path
+                                            class="opacity-75"
+                                            fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                        ></path>
+                                    </svg>
+                                    Calculando...
+                                </span>
+                            } @else {
+                                Calcular
+                            }
+                        </button>
+
+                        <button
+                            type="button"
+                            (click)="onClear()"
+                            class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                            Limpar
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Results Card -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6">Resultados</h2>
+
+                @if (isLoading()) {
+                    <!-- Skeleton -->
+                    <div class="space-y-4">
+                        <div class="h-8 bg-gray-200 rounded animate-pulse"></div>
+                        <div class="h-6 bg-gray-200 rounded animate-pulse"></div>
+                        <div class="h-6 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                } @else if (result()) {
+                    <!-- Resultados -->
+                    <div class="space-y-6">
+                        <!-- Destaques -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div
+                                class="bg-blue-50 rounded-lg p-4 text-center border border-blue-200"
+                            >
+                                <div class="text-2xl font-bold text-blue-700">
+                                    {{ result()!.media }}
+                                </div>
+                                <div class="text-sm text-gray-600">
+                                    Média PERT<br />{{ pertForm.get('unidade')?.value }}
+                                </div>
+                            </div>
+
+                            <div
+                                class="bg-gray-50 rounded-lg p-4 text-center border border-gray-200"
+                            >
+                                <div class="text-2xl font-bold text-gray-700">
+                                    {{ result()!.sigma }}
+                                </div>
+                                <div class="text-sm text-gray-600">
+                                    Desvio (σ)<br />{{ pertForm.get('unidade')?.value }}
+                                </div>
+                            </div>
+
+                            <div
+                                class="bg-green-50 rounded-lg p-4 text-center border border-green-200"
+                            >
+                                <div class="text-2xl font-bold text-green-700">
+                                    {{ result()!.valores.P90 || 'N/A' }}
+                                </div>
+                                <div class="text-sm text-gray-600">
+                                    P90<br />{{ pertForm.get('unidade')?.value }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Lista de percentis -->
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-800 mb-3">
+                                Percentis Calculados
+                            </h3>
+                            <div class="space-y-2">
+                                @for (entry of getResultEntries(); track entry[0]) {
+                                    @if (entry[1] !== undefined) {
+                                        <div
+                                            class="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg border border-gray-200"
+                                        >
+                                            <span class="font-medium text-gray-800">{{
+                                                entry[0]
+                                            }}</span>
+                                            <span class="text-gray-600">
+                                                {{ entry[1] }} {{ pertForm.get('unidade')?.value }}
+                                            </span>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Botões de ação -->
+                        <div class="flex space-x-3">
+                            <button
+                                (click)="onCopyResults()"
+                                class="flex-1 bg-gray-600 hover:bg-gray-700 text-white rounded-lg px-4 py-2 font-medium transition-colors"
+                            >
+                                Copiar Resultados
+                            </button>
+
+                            <button
+                                (click)="onSaveEntry()"
+                                [disabled]="!isFormValid()"
+                                class="px-4 py-2 bg-pink-400 hover:bg-pink-500 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors"
+                            >
+                                Salvar Entrada
+                            </button>
+                        </div>
+                    </div>
+                } @else {
+                    <!-- Placeholder -->
+                    <div class="text-center py-12">
+                        <div class="text-gray-400 text-lg mb-2">📊</div>
+                        <p class="text-gray-500">Nada calculado ainda.</p>
+                        <p class="text-sm text-gray-400 mt-1">
+                            Preencha os campos e clique em "Calcular"
+                        </p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Histórico -->
+        @if (history().length > 0) {
+            <div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6">Histórico</h2>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                >
+                                    Data/Hora
+                                </th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                >
+                                    O
+                                </th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                >
+                                    M
+                                </th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                >
+                                    P
+                                </th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                >
+                                    Média
+                                </th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                >
+                                    P90
+                                </th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                >
+                                    Ações
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @for (entry of history(); track entry.createdAt; let i = $index) {
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                                        {{ formatDate(entry.createdAt) }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                                        {{ entry.O }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                                        {{ entry.M }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                                        {{ entry.P }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                                        {{ getFormattedResult(entry.unidade, entry.media) }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                                        {{ getFormattedResult(entry.unidade, entry.P90) }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                                        <div class="flex space-x-2">
+                                            <button
+                                                (click)="onReapplyEntry(entry)"
+                                                class="text-pink-600 hover:text-pink-700 font-medium"
+                                            >
+                                                Reaplicar
+                                            </button>
+                                            <button
+                                                (click)="onDeleteEntry(i)"
+                                                class="text-red-600 hover:text-red-700 font-medium"
+                                            >
+                                                Apagar
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+
+        <!-- Como funciona -->
+        <div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <button
+                (click)="showHowItWorks.set(!showHowItWorks())"
+                class="text-lg font-semibold text-gray-800 mb-4 flex items-center"
+            >
+                Como funciona
+                <span class="ml-2">{{ showHowItWorks() ? '▲' : '▼' }}</span>
+            </button>
+
+            @if (showHowItWorks()) {
+                <div class="prose max-w-none">
+                    <ul class="space-y-2 text-gray-700">
+                        <li><strong>Média PERT:</strong> (O + 4M + P) / 6 (ou beta-PERT com λ)</li>
+                        <li><strong>Desvio padrão:</strong> σ = (P − O) / 6</li>
+                        <li>
+                            <strong>P90:</strong> média + 1.2816 × σ (z-score do percentil 90
+                            unilateral)
+                        </li>
+                        <li>
+                            <strong>Percentis:</strong> P80, P85, P90, P95 usando z-scores
+                            unilaterais
+                        </li>
+                    </ul>
+                </div>
+            }
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-12 text-center text-gray-500">
+            <p class="mb-2">Calculadora PERT & P90 - Estime esforço com confiança</p>
+            <a
+                href="/design.png"
+                download="design.png"
+                class="text-pink-600 hover:text-pink-700 font-medium"
+            >
+                📥 Baixar design de referência
+            </a>
+        </footer>
+    </div>
+</div>

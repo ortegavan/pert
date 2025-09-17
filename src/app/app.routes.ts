@@ -1,7 +1,6 @@
 import { Routes } from '@angular/router';
-import { Pert } from './components/pert/pert';
+import { PertCalculatorComponent } from './features/pert/pert-calculator.component';
 
 export const routes: Routes = [
-    { path: '', redirectTo: 'home', pathMatch: 'full' },
-    { path: 'home', component: Pert },
+    { path: '', component: PertCalculatorComponent },
 ];
