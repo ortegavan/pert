@@ -33,6 +33,7 @@ export class PertCalculatorComponent implements OnInit {
     history = signal<PertHistoryEntry[]>([]);
     showAdvanced = signal(false);
     showHowItWorks = signal(false);
+    title = 'Calculadora 3 pontos / PERT / P90';
 
     constructor(private fb: FormBuilder) {}
 
