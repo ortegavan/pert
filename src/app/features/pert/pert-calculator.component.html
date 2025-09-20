@@ -255,7 +255,9 @@
                 } @else {
                     <!-- Placeholder -->
                     <div class="text-center py-12">
-                        <div class="text-gray-400 text-lg mb-2">📊</div>
+                        <div class="text-gray-400 text-3xl mb-2">
+                            <i class="fa-regular fa-empty-set"></i>
+                        </div>
                         <p class="text-gray-500">Nada calculado ainda.</p>
                         <p class="text-sm text-gray-400 mt-1">
                             Preencha os campos e clique em "Calcular"
@@ -335,16 +337,10 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
                                         <div class="flex space-x-2">
                                             <button
-                                                (click)="onReapplyEntry(entry)"
-                                                class="text-teal-500 hover:text-teal-600 font-medium"
-                                            >
-                                                Reaplicar
-                                            </button>
-                                            <button
                                                 (click)="onDeleteEntry(i)"
                                                 class="text-red-600 hover:text-red-700 font-medium"
                                             >
-                                                Apagar
+                                                <i class="fa-regular fa-trash-can"></i>
                                             </button>
                                         </div>
                                     </td>
@@ -363,7 +359,13 @@
                 class="text-lg font-semibold text-gray-800 mb-4 flex items-center"
             >
                 Como funciona
-                <span class="ml-2">{{ showHowItWorks() ? '▲' : '▼' }}</span>
+                <span class="ml-2 text-sm">
+                    @if (showHowItWorks()) {
+                        <i class="fa-regular fa-arrow-up"></i>
+                    } @else {
+                        <i class="fa-regular fa-arrow-down"></i>
+                    }
+                </span>
             </button>
 
             @if (showHowItWorks()) {
